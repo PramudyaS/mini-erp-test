@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+
+{% block title %}Create Order{% endblock %}
+{% block header %}Create Order{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl bg-white p-6 rounded-lg shadow">
+  <form method="POST">
+    {% csrf_token %}
+
+    <!-- Order Section -->
+    <h2 class="text-lg font-semibold mb-4">Order Details</h2>
+
+    <div class="mb-4">
+      <label for="customer" class="block text-sm font-medium text-gray-700 mb-1">Customer</label>
+      <select id="customer" name="customer"
+              class="w-full rounded border border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 px-2 py-2">
+        {% for customer in customers %}
+          <option value="{{ customer.id }}">{{ customer.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="mb-4">
+      <label for="channel" class="block text-sm font-medium text-gray-700 mb-1">Channel</label>
+      <select id="channel" name="channel"
+              class="w-full rounded border border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 px-2 py-2">
+        {% for channel in channels %}
+          <option value="{{ channel.id }}">{{ channel.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <!-- Totals -->
+    <div class="grid grid-cols-2 gap-4">
+      <div class="mb-4">
+        <label for="total_amount" class="block text-sm font-medium text-gray-700 mb-1">Total Amount</label>
+        <input type="number" step="0.01" id="total_amount" name="total_amount" readonly
+               class="w-full rounded border border-gray-300 bg-gray-100 px-2 py-2"/>
+      </div>
+
+      <div class="mb-4">
+        <label for="tax_amount" class="block text-sm font-medium text-gray-700 mb-1">Tax Amount (10%)</label>
+        <input type="number" step="0.01" id="tax_amount" name="tax_amount" readonly
+               class="w-full rounded border border-gray-300 bg-gray-100 px-2 py-2"/>
+      </div>
+    </div>
+
+    <!-- Order Items Section -->
+    <h2 class="text-lg font-semibold mt-6 mb-4">Order Items</h2>
+
+    <div id="order-items-wrapper">
+      <div class="order-item mb-4 p-4 border border-gray-200 rounded-lg bg-gray-50">
+        <div class="mb-3">
+          <label class="block text-sm font-medium text-gray-700 mb-1">Item</label>
+          <select name="items[]" class="item-select w-full rounded border border-gray-300 shadow-sm px-2 py-2">
+            {% for item in items %}
+              <option value="{{ item.id }}" data-price="{{ item.price }}">{{ item.name }} - {{ item.price }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="mb-3">
+          <label class="block text-sm font-medium text-gray-700 mb-1">Quantity</label>
+          <input type="number" name="qtys[]" class="qty-input w-full rounded border border-gray-300 shadow-sm px-2 py-2" min="1" value="1"/>
+        </div>
+
+        <div class="mb-3">
+          <label class="block text-sm font-medium text-gray-700 mb-1">Item Total</label>
+          <input type="number" name="item_totals[]" class="item-total w-full rounded border border-gray-300 bg-gray-100 px-2 py-2" readonly/>
+        </div>
+
+        <button type="button"
+                class="remove-item mt-2 px-3 py-1 text-sm rounded bg-red-500 text-white hover:bg-red-600">
+          Remove
+        </button>
+      </div>
+    </div>
+
+    <div class="mb-6">
+      <button type="button" id="add-item"
+              class="px-4 py-2 rounded bg-green-600 text-white hover:bg-green-700">
+        + Add Another Item
+      </button>
+    </div>
+
+    <div class="flex justify-end space-x-2">
+      <a href="{% url 'view' %}"
+         class="px-4 py-2 rounded border border-gray-300 text-gray-700 hover:bg-gray-100">
+        Cancel
+      </a>
+      <button type="submit"
+              class="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700">
+        Save
+      </button>
+    </div>
+  </form>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const wrapper = document.getElementById("order-items-wrapper");
+  const addBtn = document.getElementById("add-item");
+  const totalAmountEl = document.getElementById("total_amount");
+  const taxAmountEl = document.getElementById("tax_amount");
+
+  function calculateTotals() {
+    let subtotal = 0;
+    wrapper.querySelectorAll(".order-item").forEach(itemRow => {
+      const select = itemRow.querySelector(".item-select");
+      const qtyInput = itemRow.querySelector(".qty-input");
+      const itemTotalInput = itemRow.querySelector(".item-total");
+
+      const price = parseFloat(select.options[select.selectedIndex].dataset.price || 0);
+      const qty = parseInt(qtyInput.value || 0);
+      const itemTotal = price * qty;
+
+      itemTotalInput.value = itemTotal.toFixed(2);
+      subtotal += itemTotal;
+    });
+
+    const tax = subtotal * 0.10;
+    const total = subtotal + tax;
+
+    taxAmountEl.value = tax.toFixed(2);
+    totalAmountEl.value = total.toFixed(2);
+  }
+
+  function attachEvents(row) {
+    row.querySelector(".item-select").addEventListener("change", calculateTotals);
+    row.querySelector(".qty-input").addEventListener("input", calculateTotals);
+    row.querySelector(".remove-item").addEventListener("click", () => {
+      if (wrapper.querySelectorAll(".order-item").length > 1) {
+        row.remove();
+        calculateTotals();
+      }
+    });
+  }
+
+  addBtn.addEventListener("click", () => {
+    const firstItem = wrapper.querySelector(".order-item");
+    const clone = firstItem.cloneNode(true);
+
+    clone.querySelectorAll("input").forEach(input => {
+      if (!input.classList.contains("item-total")) input.value = "";
+      else input.value = "0.00";
+    });
+
+    wrapper.appendChild(clone);
+    attachEvents(clone);
+  });
+
+  attachEvents(wrapper.querySelector(".order-item"));
+
+  calculateTotals();
+});
+</script>
+{% endblock %}
