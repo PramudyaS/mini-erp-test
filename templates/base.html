@@ -13,9 +13,9 @@
       My Admin
     </div>
     <nav class="flex-1 p-4 space-y-2">
-      <a href="/customer/" class="block p-2 rounded hover:bg-gray-700">Customers</a>
-      <a href="/inventory/" class="block p-2 rounded hover:bg-gray-700">Inventory</a>
-      <a href="/order/" class="block p-2 rounded hover:bg-gray-700">Orders</a>
+      <a href="{% url 'customer_list' %}" class="block p-2 rounded hover:bg-gray-700">Customers</a>
+      <a href="{% url 'view_item' %}" class="block p-2 rounded hover:bg-gray-700">Inventory</a>
+      <a href="{% url 'view' %}" class="block p-2 rounded hover:bg-gray-700">Orders</a>
     </nav>
   </aside>
 
@@ -26,9 +26,12 @@
       <h1 class="text-xl font-semibold">{% block header %}Dashboard{% endblock %}</h1>
       <div class="flex items-center space-x-4">
         <span class="text-gray-600">Admin User</span>
-        <button class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded">
-          Logout
-        </button>
+        <form method="POST" action="{% url 'admin:logout' %}">
+            {% csrf_token %}
+            <button type="submit" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded">
+                Logout
+            </button>
+        </form>
       </div>
     </header>
 
